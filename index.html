@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>과학탐구반 슬러시 체험 사전신청</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div id="previewRibbon" class="preview-ribbon hide">
+    <div class="row">
+      <span>👀 관리자 미리보기 중 — 실제로 신청되지 않아요</span>
+      <span class="row" style="gap:6px">
+        <button data-pv="before">시작 전</button><button data-pv="open">신청 중</button><button data-pv="ended">마감</button>
+        <button id="pvEnd" style="background:#4a3500;color:#fff">미리보기 끝내기 ✕</button>
+      </span>
+    </div>
+  </div>
+
+  <header>
+    <div class="emoji">🧊🥤</div>
+    <h1 id="boothName">과학탐구반 슬러시 만들기 체험</h1>
+    <div class="sub" id="boothSub">사전신청</div>
+  </header>
+
+  <nav id="nav">
+    <button data-v="apply" class="on">🥤 체험 신청</button>
+    <button data-v="mine">🔎 내 신청 확인·취소</button>
+    <button data-v="admin" class="adm">🔧 관리자</button>
+  </nav>
+
+  <!-- ───── 체험 신청 ───── -->
+  <section id="v-apply">
+    <div id="banner" class="banner b-before"><span class="big">불러오는 중…</span></div>
+
+    <div class="card" id="noticeCard"><div class="notice pre" id="notice"></div></div>
+
+    <div class="card">
+      <h2>① 체험 타임 고르기</h2>
+      <div class="muted" style="margin-bottom:10px">남은 자리는 자동으로 바뀌어요. 자리 1개 = 1조(최대 <span class="maxN">3</span>명)<br>
+        🪑 자리는 정해져 있지 않아요. 체험 시간에 <b>먼저 온 조부터</b> 앉아요.</div>
+      <div class="slots" id="slots"><div class="loading">불러오는 중…</div></div>
+    </div>
+
+    <div class="card">
+      <h2>② 함께 체험할 조원 적기</h2>
+      <div class="notice" style="margin-bottom:14px">👫 <b>2명이 한 조</b>로 신청하는 것을 추천해요. (최대 <span class="maxN">3</span>명)<br>
+        함께 올 친구와 <b>미리 상의</b>하고, 친구 이름을 <b>모두</b> 적어 주세요. 여기 적힌 친구는 따로 또 신청할 수 없어요!</div>
+      <div id="memberRows"></div>
+    </div>
+
+    <div class="card">
+      <h2>③ 확인번호 정하기</h2>
+      <div class="keybox">
+        <b class="t">🔑 확인번호가 뭐예요?</b>
+        <ul>
+          <li>내 신청을 <b>확인하거나 취소할 때</b> 쓰는 <b>나만의 숫자 4자리</b> 비밀번호예요.</li>
+          <li>다른 사람이 내 신청을 <b>마음대로 취소하지 못하게</b> 지켜 줘요.</li>
+          <li>신청서를 쓴 <b>대표자</b>만 사용해요. 친구들은 따로 정하지 않아도 돼요.</li>
+          <li>1234, 0000처럼 쉬운 번호는 피하고, 휴대폰 비밀번호는 쓰지 마세요.</li>
+          <li>잊어버리면 신청을 확인·취소할 수 없어요. <b>꼭 기억하거나 사진으로 찍어 두세요!</b></li>
+        </ul>
+      </div>
+      <div class="grid2">
+        <label class="field"><span>확인번호 (숫자 4자리)</span><input id="pin" inputmode="numeric" maxlength="4" placeholder="예) 2580" autocomplete="off" style="font-size:30px;letter-spacing:6px"></label>
+        <label class="field"><span>한 번 더 입력</span><input id="pin2" inputmode="numeric" maxlength="4" placeholder="같은 번호" autocomplete="off" style="font-size:30px;letter-spacing:6px"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="warn" style="margin-bottom:14px">
+        <h2>⚠️ 꼭 지켜 주세요!</h2>
+        <div style="font-size:21px;font-weight:800">예약해 놓고 오지 않으면 <u>다른 친구의 체험 기회를 빼앗는 것</u>이에요.</div>
+        <ul>
+          <li>신청했으면 <b>정해진 시간에 꼭</b> 와 주세요.</li>
+          <li>못 오게 되면 <b>바로 [🔎 내 신청 확인·취소]에서 취소</b>해 주세요. 그래야 다른 친구가 신청할 수 있어요.</li>
+          <li>함께 신청한 친구들에게도 시간을 꼭 알려 주세요.</li>
+        </ul>
+      </div>
+      <label class="chk"><input type="checkbox" id="agree1">
+        <span>신청한 시간에 <u>꼭 올게요</u>. 못 오게 되면 <u>미리 취소</u>할게요.</span></label>
+      <label class="chk"><input type="checkbox" id="agree2">
+        <span>함께 올 친구들과 미리 상의했고, <u>다른 부스 체험 시간과 겹치지 않는 것</u>을 확인했어요.</span></label>
+      <button class="btn full" id="btnApply" disabled>신청하기</button>
+      <div id="applyMsg"></div>
+    </div>
+  </section>
+
+  <!-- ───── 내 신청 확인·취소 ───── -->
+  <section id="v-mine" class="hide">
+    <div class="card">
+      <h2>🔎 내 신청 확인·취소 <span class="muted">(대표자)</span></h2>
+      <div class="muted" style="margin-bottom:10px">신청서를 쓴 <b>대표자 학번</b>과 신청할 때 정한 <b>확인번호 4자리</b>를 넣으세요. 취소는 대표자만 할 수 있어요.</div>
+      <div class="grid2">
+        <label class="field"><span>대표자 학번</span><input id="mSid" inputmode="numeric" maxlength="5" placeholder="예) 10601"></label>
+        <label class="field"><span>확인번호 4자리</span><input id="mPin" inputmode="numeric" maxlength="4" type="password" placeholder="••••"></label>
+      </div>
+      <button class="btn" id="btnLookup">확인하기</button>
+      <div id="mineOut"></div>
+      <div class="muted" style="margin-top:12px">🙋 확인번호를 잊어버렸다면 선생님께 말씀드리세요.</div>
+    </div>
+    <div class="card">
+      <h2>🙋 친구가 나를 넣어 신청했을까?</h2>
+      <div class="muted" style="margin-bottom:10px">내 학번과 이름을 넣으면, 내가 들어 있는 신청이 있는지 알려 줘요.</div>
+      <div class="grid2">
+        <label class="field"><span>내 학번</span><input id="iSid" inputmode="numeric" maxlength="5" placeholder="예) 10602"></label>
+        <label class="field"><span>내 이름</span><input id="iName" maxlength="10" placeholder="예) 홍길동"></label>
+      </div>
+      <button class="btn gray" id="btnIncluded">확인하기</button>
+      <div id="incOut"></div>
+    </div>
+  </section>
+
+  <!-- ───── 관리자 ───── -->
+  <section id="v-admin" class="hide">
+    <div class="card" id="admLogin">
+      <h2>🔧 관리자 모드</h2>
+      <div class="row"><input id="admPw" type="password" placeholder="관리자 비밀번호" style="max-width:320px"><button class="btn" id="btnAdm">로그인</button></div>
+      <div id="admMsg"></div>
+    </div>
+    <div id="admPanel" class="hide">
+      <div class="subnav" id="admNav">
+        <button data-a="set" class="on">⚙️ 신청 설정</button>
+        <button data-a="slot">⏰ 타임 관리</button>
+        <button data-a="apps">📋 신청 목록</button>
+        <button data-a="board">🔗 운영 현황 링크</button>
+        <button data-a="log">📜 기록</button>
+        <button id="btnPreview" style="background:#ffd34d;border-color:#c9a227">👀 신청 화면 미리보기</button>
+        <button id="btnAdmRefresh" style="margin-left:auto">🔄</button>
+        <button id="btnAdmOut">로그아웃</button>
+      </div>
+      <div id="admBody"></div>
+    </div>
+  </section>
+
+  <footer>
+    이 신청 사이트(프로그램 코드, 디자인, 안내 글)의 저작권은 제작자 혜민쌤에게 있으며, 허락 없이 복제·수정·배포·게시하거나 상업적으로 이용하는 것을 금지합니다.<br>
+    © 2026 혜민쌤 · 신남중학교 과학탐구반
+  </footer>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ================= 공통 ================= */
+const API_URL = (window.SLUSH_CONFIG || {}).API_URL || '';
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+/** 구글 시트 API 호출 (개인정보는 브라우저에 저장하지 않음) */
+async function api(action, data){
+  if (!/^https:\/\/script\.google\.com\//.test(API_URL)) return { ok:false, msg:'config.js에 Apps Script 주소가 아직 없어요. 선생님께 알려 주세요.' };
+  const res = await fetch(API_URL, { method:'POST', body: JSON.stringify(Object.assign({ action }, data || {})) });
+  return res.json();
+}
+function msgBox(el, text, ok){ if (el) el.innerHTML = text ? `<div class="msg ${ok ? 'ok' : 'err'}">${esc(text)}</div>` : ''; }
+function netErr(el){ msgBox(el, '인터넷 연결이 불안정해요. 잠시 뒤 다시 시도해 주세요.', false); }
+function busy(btn, on, label){
+  if (!btn) return;
+  if (on){ btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span> ' + (label || '처리 중…'); }
+  else { btn.disabled = false; btn.innerHTML = btn.dataset.label || btn.innerHTML; }
+}
+function membersHtml(ms){ return (ms || []).map(m => `${esc(m.sid)} ${esc(m.name)}`).join(', '); }
+function onlyDigits(el, n){ el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, '').slice(0, n); }); }
+function pad(n){ return String(n).padStart(2, '0'); }
+function fmtMs(ms){
+  const d = new Date(ms + 9 * 3600000); // 한국 시간
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일(${'일월화수목금토'[d.getUTCDay()]}) ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+function localInputToMs(v){ // "2026-11-20T09:00" (한국 시간) → ms
+  const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4] - 9, +m[5]) : null;
+}
+function modal(html, buttons){
+  return new Promise(resolve => {
+    const root = $('#modalRoot');
+    root.innerHTML = `<div class="modal-bg"><div class="modal">${html}<div class="row" style="margin-top:16px;justify-content:flex-end" id="mBtns"></div></div></div>`;
+    (buttons || [{label:'확인', v:true}]).forEach(b => {
+      const el = document.createElement('button');
+      el.className = 'btn ' + (b.cls || ''); el.textContent = b.label;
+      el.onclick = () => { root.innerHTML = ''; resolve(b.v); };
+      $('#mBtns').appendChild(el);
+    });
+  });
+}
+
+/* 화면 전환 — 주소는 그대로, 버튼으로만 이동 */
+let view = 'apply';
+$$('#nav button').forEach(b => b.onclick = () => show(b.dataset.v));
+function show(v){
+  view = v;
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  ['apply','mine','admin'].forEach(x => $('#v-' + x).classList.toggle('hide', x !== v));
+  window.scrollTo(0, 0);
+  if (v === 'apply' && !preview) loadPublic();
+  if (v === 'admin' && admTok) loadAdmin();
+}
+
+/* ================= 체험 신청 ================= */
+let pub = null, offset = 0, selSlot = null, lastFetch = 0, fetching = false, memberMax = 0;
+let preview = null; // 관리자 미리보기: { code, data }
+
+async function loadPublic(){
+  if (fetching || preview) return;
+  fetching = true;
+  try {
+    const t0 = Date.now();
+    const r = await api('state');
+    if (preview) return;
+    if (!r || !r.ok){ if (r && r.msg) $('#banner').innerHTML = `<span class="big" style="font-size:22px">${esc(r.msg)}</span>`; return; }
+    offset = r.now - Math.round((t0 + Date.now()) / 2);
+    pub = r; lastFetch = Date.now();
+    renderPublic();
+  } catch (e) { /* 다음 주기에 다시 시도 */ }
+  finally { fetching = false; }
+}
+function serverNow(){ return Date.now() + offset; }
+
+function renderPublic(){
+  const d = preview ? preview.data : pub;
+  if (!d) return;
+  $('#boothName').textContent = d.booth || '과학탐구반 슬러시 만들기 체험';
+  $('#boothSub').textContent = (d.place ? '📍 ' + d.place + ' · ' : '') + '사전신청';
+  $('#notice').textContent = d.notice || '';
+  $('#noticeCard').classList.toggle('hide', !d.notice);
+  $$('.maxN').forEach(e => e.textContent = d.maxMembers);
+  if (memberMax !== d.maxMembers) buildMemberRows(d.maxMembers);
+  renderBanner();
+  const box = $('#slots');
+  if (!d.slots.length){ box.innerHTML = '<div class="loading">아직 열린 타임이 없어요.</div>'; box.dataset.html = ''; return; }
+  if (selSlot && !d.slots.some(s => s.id === selSlot && s.remaining > 0)) selSlot = null;
+  const html = d.slots.map(s => {
+    const full = s.remaining <= 0;
+    const pct = s.capacity ? Math.min(100, Math.round(s.used / s.capacity * 100)) : 100;
+    return `<button class="slot ${full ? 'full' : ''} ${selSlot === s.id ? 'sel' : ''}" data-id="${esc(s.id)}" ${full ? 'disabled' : ''}>
+      <div class="nm">${esc(s.name)}</div><div class="tm">⏰ ${esc(s.time)}</div>
+      <div class="rem">${full ? '<b>마감</b>' : `남은 자리 <b>${s.remaining}</b>`} <span class="muted">/ ${s.capacity}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div></button>`;
+  }).join('');
+  if (box.dataset.html === html) return; // 바뀐 게 없으면 다시 그리지 않음
+  box.innerHTML = html; box.dataset.html = html;
+  $$('.slot', box).forEach(b => b.onclick = () => { selSlot = b.dataset.id; renderPublic(); });
+}
+
+function currentCode(){
+  const d = preview ? preview.data : pub;
+  if (!d) return 'loading';
+  if (preview) return preview.code;
+  const st = d.status;
+  let code = st.code;
+  if (code === 'before' && serverNow() >= st.startMs) code = 'opening';
+  if (code === 'open' && st.endMs && serverNow() >= st.endMs) code = 'ended';
+  return code;
+}
+function renderBanner(){
+  const d = preview ? preview.data : pub;
+  if (!d) return;
+  const st = d.status, b = $('#banner'), btn = $('#btnApply');
+  const code = currentCode();
+  const now = preview ? Date.now() : serverNow();
+  let cls = 'b-closed', html = '';
+  if (code === 'open'){
+    cls = 'b-open';
+    html = `<span class="big">🟢 지금 신청할 수 있어요!</span>` + (st.endMs ? `<span class="muted">신청 마감: ${fmtMs(st.endMs)}</span>` : '');
+  } else if (code === 'before'){
+    cls = 'b-before';
+    const left = Math.max(0, st.startMs - now);
+    const s = Math.floor(left / 1000), dd = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    html = `<span class="big">⏳ ${fmtMs(st.startMs)}부터 신청할 수 있어요</span>
+      <span class="count">${dd ? dd + '일 ' : ''}${pad(h)}:${pad(m)}:${pad(sec)}</span>
+      <span class="muted">미리 조원과 확인번호를 적어 두고, 시간이 되면 바로 누르세요!</span>`;
+  } else if (code === 'opening'){
+    cls = 'b-before'; html = `<span class="big">⏳ 곧 열려요… 잠시만요!</span>`;
+  } else {
+    html = `<span class="big">${code === 'ended' ? '⛔ 신청 시간이 끝났어요' : code === 'paused' ? '⏸️ 신청을 잠시 멈췄어요' : '📅 신청 시작 시간이 아직 정해지지 않았어요'}</span>`
+      + (code === 'ended' ? `<span class="muted">신청했는데 못 오게 되었다면 [🔎 내 신청 확인·취소]에서 꼭 취소해 주세요.</span>` : '');
+  }
+  b.className = 'banner ' + cls;
+  if (b.dataset.html !== html){ b.innerHTML = html; b.dataset.html = html; }
+  if (!btn.querySelector('.spin')){
+    btn.disabled = code !== 'open';
+    btn.textContent = code === 'open' ? (preview ? '🥤 신청하기 (미리보기)' : '🥤 신청하기') : (code === 'before' || code === 'opening') ? '신청 시작 전이에요' : '지금은 신청할 수 없어요';
+  }
+}
+
+function buildMemberRows(n){
+  const old = readMembersRaw();
+  memberMax = n;
+  const labels = ['대표자 (나)<small>신청서를 쓰는 사람</small>', '함께 올 친구 2<small>추천!</small>', '함께 올 친구 3<small>(선택)</small>'];
+  $('#memberRows').innerHTML = Array.from({length: n}, (_, i) => `
+    <div class="mrow"><div class="lab">${labels[i]}</div>
+      <input class="m-sid" inputmode="numeric" maxlength="5" placeholder="학번 5자리" value="${esc(old[i] ? old[i].sid : '')}">
+      <input class="m-name" maxlength="10" placeholder="이름" value="${esc(old[i] ? old[i].name : '')}"></div>`).join('');
+  $$('.m-sid').forEach(el => onlyDigits(el, 5));
+}
+function readMembersRaw(){
+  const names = $$('.m-name');
+  return $$('.m-sid').map((el, i) => ({ sid: el.value.replace(/\s/g, ''), name: (names[i].value || '').replace(/\s/g, '') }));
+}
+function resetForm(){
+  $$('.m-sid,.m-name').forEach(el => el.value = ''); $('#pin').value = ''; $('#pin2').value = '';
+  $('#agree1').checked = false; $('#agree2').checked = false; selSlot = null;
+}
+
+onlyDigits($('#pin'), 4); onlyDigits($('#pin2'), 4);
+$('#btnApply').onclick = async () => {
+  const out = $('#applyMsg'); msgBox(out, '');
+  const d = preview ? preview.data : pub;
+  const slot = d && d.slots.find(s => s.id === selSlot);
+  if (!slot) return msgBox(out, '① 체험 타임을 먼저 골라 주세요.');
+  const raw = readMembersRaw();
+  const ms = raw.filter(m => m.sid || m.name);
+  if (!raw[0] || !raw[0].sid || !raw[0].name) return msgBox(out, '② 대표자(나)의 학번과 이름을 적어 주세요.');
+  for (const m of ms){
+    if (!/^[1-3]\d{4}$/.test(m.sid)) return msgBox(out, `학번은 숫자 5자리로 적어 주세요. (${m.sid || '빈칸'} / ${m.name || '이름 없음'})`);
+    if (!/^[가-힣A-Za-z]{2,10}$/.test(m.name)) return msgBox(out, `${m.sid} 학생의 이름을 정확히 적어 주세요.`);
+  }
+  if (new Set(ms.map(m => m.sid)).size !== ms.length) return msgBox(out, '같은 학번이 두 번 적혀 있어요.');
+  const pin = $('#pin').value;
+  if (!/^\d{4}$/.test(pin)) return msgBox(out, '③ 확인번호를 숫자 4자리로 정해 주세요.');
+  if (pin !== $('#pin2').value) return msgBox(out, '③ 확인번호 두 칸이 서로 달라요. 다시 확인해 주세요.');
+  if (!$('#agree1').checked || !$('#agree2').checked) return msgBox(out, '약속 두 가지에 모두 체크해 주세요.');
+
+  const go = await modal(`<h2>이렇게 신청할까요?</h2>
+    <div class="bigbox">⏰ <b>${esc(slot.name)}</b> (${esc(slot.time)})<br>👫 ${ms.length}명: ${membersHtml(ms)}</div>
+    ${ms.length === 1 ? '<div class="msg err">혼자 신청하면 자리 1개를 혼자 쓰게 돼요. 친구와 2명이 함께 신청하는 것을 추천해요.</div>' : ''}
+    <div class="warn" style="margin-top:10px;padding:12px 14px;font-weight:800">신청하면 이 시간에 꼭 와야 해요. 못 오면 꼭 미리 취소!</div>`,
+    [{label:'다시 볼게요', v:false, cls:'gray'}, {label:'신청하기', v:true}]);
+  if (!go) return;
+
+  const done = async r => {
+    await modal(`<h2>🎉 신청 완료!${preview ? ' <span class="pill">미리보기</span>' : ''}</h2>
+      <div class="bigbox">⏰ <b>${esc(r.slotName)}</b> (${esc(r.slotTime)})<br>👫 ${membersHtml(r.members)}</div>
+      <div class="bigbox">🔑 내 확인번호 (확인·취소할 때 필요)<br><span class="pin">${esc(pin)}</span></div>
+      <div class="warn" style="padding:12px 14px"><b>⚠️ 정해진 시간에 꼭 와 주세요!</b><br>못 오게 되면 [🔎 내 신청 확인·취소]에서 <b>바로 취소</b>해 주세요. 그래야 다른 친구가 체험할 수 있어요.</div>
+      <div class="muted" style="margin-top:8px">📸 이 화면을 사진으로 찍어 두세요. 자리는 먼저 온 조부터 앉아요. 함께 신청한 친구들에게도 시간을 알려 주세요!</div>`);
+  };
+  if (preview){ await done({ slotName: slot.name, slotTime: slot.time, members: ms }); resetForm(); renderPublic(); msgBox(out, '미리보기라서 실제로 신청되지는 않았어요.', true); return; }
+
+  const btn = $('#btnApply'); busy(btn, true, '신청하는 중…');
+  try {
+    const r = await api('apply', { form: { slotId: slot.id, members: ms, pin: pin, agree: true } });
+    busy(btn, false);
+    if (!r.ok){ msgBox(out, r.msg); if (r.code === 'full') selSlot = null; lastFetch = 0; loadPublic(); return; }
+    await done(r);
+    resetForm();
+    msgBox(out, `「${r.slotName}」 신청이 완료되었어요. 정해진 시간에 꼭 와 주세요!`, true);
+    lastFetch = 0; loadPublic();
+  } catch (e) { busy(btn, false); netErr(out); }
+};
+
+/* ================= 내 신청 확인·취소 ================= */
+onlyDigits($('#mSid'), 5); onlyDigits($('#mPin'), 4); onlyDigits($('#iSid'), 5);
+$('#btnLookup').onclick = async () => {
+  const out = $('#mineOut'), btn = $('#btnLookup');
+  const sid = $('#mSid').value, pin = $('#mPin').value;
+  if (!/^\d{5}$/.test(sid) || !/^\d{4}$/.test(pin)) return msgBox(out, '학번 5자리와 확인번호 4자리를 넣어 주세요.');
+  busy(btn, true, '확인 중…');
+  try {
+    const r = await api('lookup', { sid, pin }); busy(btn, false);
+    if (!r.ok) return msgBox(out, r.msg);
+    const a = r.app;
+    out.innerHTML = `<div class="bigbox" style="margin-top:14px">✅ 신청되어 있어요<br>⏰ <b>${esc(a.slotName)}</b> (${esc(a.slotTime)})<br>
+      👫 ${membersHtml(a.members)}<br><span class="muted">신청 시각: ${esc(a.at)}</span></div>
+      <div class="muted" style="margin-bottom:10px">정해진 시간에 꼭 와 주세요. 못 오게 되면 아래 버튼으로 취소해 주세요.</div>
+      ${r.canCancel ? '<button class="btn red" id="btnCancelMine">이 신청 취소하기</button>' : '<div class="msg err">지금은 직접 취소할 수 없어요. 못 오게 되었다면 꼭 선생님께 말씀드리세요.</div>'}
+      <div id="cancelMsg"></div>`;
+    const cb = $('#btnCancelMine');
+    if (cb) cb.onclick = async () => {
+      const ok = await modal(`<h2>정말 취소할까요?</h2><div class="bigbox">${esc(a.slotName)} · ${membersHtml(a.members)}</div>
+        <div class="msg err">취소하면 함께 적은 친구들도 모두 취소돼요. 자리는 다른 친구에게 넘어가요.</div>`,
+        [{label:'아니요', v:false, cls:'gray'}, {label:'취소할래요', v:true, cls:'red'}]);
+      if (!ok) return;
+      busy(cb, true, '취소하는 중…');
+      try {
+        const c = await api('cancel', { sid, pin });
+        if (!c.ok){ busy(cb, false); return msgBox($('#cancelMsg'), c.msg); }
+        out.innerHTML = ''; msgBox(out, c.msg, true); $('#mPin').value = '';
+      } catch (e) { busy(cb, false); netErr($('#cancelMsg')); }
+    };
+  } catch (e) { busy(btn, false); netErr(out); }
+};
+$('#btnIncluded').onclick = async () => {
+  const out = $('#incOut'), btn = $('#btnIncluded');
+  const sid = $('#iSid').value, name = $('#iName').value.trim();
+  if (!/^\d{5}$/.test(sid) || !name) return msgBox(out, '학번 5자리와 이름을 넣어 주세요.');
+  busy(btn, true, '확인 중…');
+  try {
+    const r = await api('included', { sid, name }); busy(btn, false);
+    if (!r.ok) return msgBox(out, r.msg);
+    if (!r.found) return msgBox(out, '아직 신청된 내역이 없어요. (친구가 학번·이름을 다르게 적었을 수도 있어요)');
+    msgBox(out, `${r.leader} 학생이 신청한 「${r.slotName}」(${r.slotTime})에 들어 있어요! 시간 맞춰 꼭 와 주세요.`, true);
+  } catch (e) { busy(btn, false); netErr(out); }
+};
+
+/* ================= 관리자 ================= */
+let admTok = null, adm = null, admTab = 'set';
+$('#btnAdm').onclick = async () => {
+  const btn = $('#btnAdm'), out = $('#admMsg');
+  busy(btn, true, '확인 중…');
+  try {
+    const r = await api('adminLogin', { pw: $('#admPw').value }); busy(btn, false);
+    if (!r.ok) return msgBox(out, r.msg);
+    admTok = r.token; $('#admPw').value = ''; msgBox(out, '');
+    $('#admLogin').classList.add('hide'); $('#admPanel').classList.remove('hide');
+    loadAdmin();
+  } catch (e) { busy(btn, false); netErr(out); }
+};
+$('#admPw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnAdm').click(); });
+$$('#admNav button[data-a]').forEach(b => b.onclick = () => { admTab = b.dataset.a; $$('#admNav button[data-a]').forEach(x => x.classList.toggle('on', x === b)); renderAdmin(); });
+$('#btnAdmRefresh').onclick = () => loadAdmin();
+$('#btnAdmOut').onclick = () => { admTok = null; adm = null; $('#admPanel').classList.add('hide'); $('#admLogin').classList.remove('hide'); $('#admBody').innerHTML = ''; };
+
+async function loadAdmin(){
+  if (!admTok) return;
+  try {
+    const r = await api('adminAll', { token: admTok });
+    if (!r.ok){
+      if (r.code === 'auth'){ $('#btnAdmOut').click(); msgBox($('#admMsg'), r.msg); }
+      else msgBox($('#admBody'), r.msg);
+      return;
+    }
+    adm = r; renderAdmin();
+  } catch (e) { netErr($('#admBody')); }
+}
+async function admDo(action, data, btn, out){
+  busy(btn, true);
+  try {
+    const r = await api(action, Object.assign({ token: admTok }, data));
+    busy(btn, false);
+    if (!r.ok){
+      if (r.code === 'auth'){ $('#btnAdmOut').click(); msgBox($('#admMsg'), r.msg); return r; }
+      if (out) msgBox(out, r.msg); else await modal(`<h2>앗!</h2><div class="msg err">${esc(r.msg)}</div>`);
+      return r;
+    }
+    await loadAdmin();
+    const o2 = out && document.body.contains(out) ? out : $('#admFlash');
+    if (o2 && r.msg) msgBox(o2, r.msg, true);
+    return r;
+  } catch (e) { busy(btn, false); if (out) netErr(out); return { ok:false }; }
+}
+const statusPill = s => `<span class="pill ${s === '신청' ? 'ok' : 'no'}">${esc(s)}</span>`;
+function boardLink(){ return new URL('board.html', location.href).href.split('#')[0] + '#k=' + encodeURIComponent(adm.boardKey); }
+
+function renderAdmin(){
+  if (!adm) return;
+  const st = adm.status;
+  const stText = {open:'🟢 신청 받는 중', before:'⏳ 시작 전', ended:'⛔ 신청 시간 끝남', paused:'⏸️ 일시 중지', unset:'📅 시작 시간 미정'}[st.code];
+  const top = `<div class="card" style="padding:14px 18px"><div class="row" style="justify-content:space-between">
+     <b style="font-size:22px">${stText}</b><span class="muted">${st.startMs ? '열림 ' + fmtMs(st.startMs) : ''}${st.endMs ? ' ~ 닫힘 ' + fmtMs(st.endMs) : ''}</span></div>
+     <div id="admFlash"></div></div>`;
+  const body = { set: admSetHtml, slot: admSlotHtml, apps: admAppsHtml, board: admBoardHtml, log: admLogHtml }[admTab]();
+  $('#admBody').innerHTML = top + body;
+  bindAdmin();
+}
+
+/* --- 신청 설정 --- */
+function admSetHtml(){
+  const s = adm.settings;
+  return `<div class="card"><h2>⚙️ 신청 설정</h2>
+    <div class="notice" style="margin-bottom:14px">⏰ 신청은 <b>시작 일시부터 마감 일시까지만</b> 열려요. 구글 서버(한국 시간) 기준이라 학생 기기 시계를 바꿔도 미리 신청할 수 없어요.</div>
+    <div class="grid2">
+      <label class="field"><span>🟢 신청 시작 일시</span><input id="sStart" type="datetime-local" value="${esc(s.start)}"></label>
+      <label class="field"><span>⛔ 신청 마감 일시</span><input id="sEnd" type="datetime-local" value="${esc(s.end)}"></label>
+    </div>
+    <div class="grid2">
+      <label class="field"><span>부스 이름</span><input id="sBooth" value="${esc(s.booth)}" maxlength="40"></label>
+      <label class="field"><span>장소</span><input id="sPlace" value="${esc(s.place)}" maxlength="30"></label>
+      <label class="field"><span>한 조 최대 인원</span><select id="sMax">${[1,2,3].map(n => `<option ${n === s.maxMembers ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <div class="field"><span>기타</span>
+        <label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="checkbox" id="sPaused" ${s.paused ? 'checked' : ''}> 신청을 잠시 멈추기</label>
+        <label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="checkbox" id="sCancel" ${s.canCancel ? 'checked' : ''}> 학생 본인 취소 허용</label></div>
+    </div>
+    <label class="field"><span>안내 문구 (신청 화면 위쪽에 보여요)</span><textarea id="sNotice" maxlength="500">${esc(s.notice)}</textarea></label>
+    <div class="row"><button class="btn" id="btnSaveSet">💾 설정 저장</button><button class="btn yellow" id="btnPreview2">👀 저장한 내용으로 미리보기</button></div>
+    <div id="setMsg"></div>
+  </div>
+  <div class="card"><h2>🔑 관리자 비밀번호 바꾸기</h2>
+    <div class="row"><input id="pwAdm" type="password" placeholder="새 비밀번호 (6자 이상)" style="max-width:320px"><button class="btn gray" id="btnPwAdm">바꾸기</button></div>
+    <div id="pwMsg"></div></div>`;
+}
+/* --- 타임 관리 --- */
+function admSlotHtml(){
+  const rows = adm.slots.map(s => {
+    const used = adm.apps.filter(a => a.status === '신청' && a.slotId === s.id).length;
+    return `<tr><td>${s.order}</td><td><b>${esc(s.name)}</b><br><span class="muted">${esc(s.time)}</span></td>
+      <td>${used} / ${s.capacity}조</td><td>${s.part ? esc(s.part) : '<span class="muted">-</span>'}</td><td>${s.use ? '<span class="pill ok">보임</span>' : '<span class="pill no">숨김</span>'}</td>
+      <td><div class="row"><button class="btn sm" data-edit-slot="${esc(s.id)}">수정</button>
+        <button class="btn sm red" data-del-slot="${esc(s.id)}">삭제</button></div></td></tr>`;
+  }).join('');
+  return `<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">⏰ 타임 관리</h2>
+    <button class="btn mint" id="btnNewSlot">＋ 타임 추가</button></div>
+    <div class="muted" style="margin:8px 0">정원 = 그 타임에 받을 체험 조 수(자리 수)예요. 자리는 먼저 온 조부터 앉아요.<br>「운영」을 1부/2부로 정하면, 운영 현황 화면에 <b>부스 운영 계획판</b> 배정판의 그 부 테이블 담당이 함께 나와요.</div>
+    <div id="slotEditor"></div>
+    <div class="tblwrap"><table><thead><tr><th>순서</th><th>타임</th><th>신청/정원</th><th>운영</th><th>표시</th><th></th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" class="muted">타임이 없어요. ＋ 타임 추가를 눌러 주세요.</td></tr>'}</tbody></table></div></div>`;
+}
+function slotEditorHtml(s){
+  s = s || { id:'', name:'', time:'', capacity:6, order:'', use:true, part:'' };
+  return `<div class="slotboard" style="background:#f4faff"><h3 style="margin-top:0">${s.id ? '타임 수정' : '새 타임'}</h3>
+    <div class="grid2">
+      <label class="field"><span>타임 이름</span><input id="eName" value="${esc(s.name)}" placeholder="예) 1부 1타임" maxlength="30"></label>
+      <label class="field"><span>시간</span><input id="eTime" value="${esc(s.time)}" placeholder="예) 10:00~10:20" maxlength="30"></label>
+      <label class="field"><span>정원 (체험 조 수)</span><input id="eCap" type="number" min="0" max="100" value="${esc(s.capacity)}"></label>
+      <label class="field"><span>순서 (작을수록 위)</span><input id="eOrder" type="number" value="${esc(s.order)}" placeholder="비우면 맨 뒤"></label>
+      <label class="field"><span>이 타임에 일하는 운영 명단 (계획판 배정판)</span><select id="ePart">${['', '1부', '2부'].map(p => `<option value="${p}" ${s.part === p ? 'selected' : ''}>${p ? '계획판 ' + p + ' 담당' : '없음'}</option>`).join('')}</select></label>
+    </div>
+    <label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="checkbox" id="eUse" ${s.use ? 'checked' : ''}> 신청 화면에 보이기</label>
+    <div class="row"><button class="btn" id="btnSaveSlot" data-id="${esc(s.id)}">💾 저장</button><button class="btn gray" id="btnCancelSlot">닫기</button></div>
+    <div id="slotMsg"></div></div>`;
+}
+/* --- 신청 목록 --- */
+let appFilter = { slot:'', status:'신청' };
+function admAppsHtml(){
+  let list = adm.apps.slice();
+  if (appFilter.slot) list = list.filter(a => a.slotId === appFilter.slot);
+  if (appFilter.status === '신청') list = list.filter(a => a.status === '신청');
+  if (appFilter.status === '취소') list = list.filter(a => a.status !== '신청');
+  const act = adm.apps.filter(a => a.status === '신청');
+  const sum = adm.slots.map(s => {
+    const n = act.filter(a => a.slotId === s.id);
+    return `<span class="pill" style="margin:3px">${esc(s.name)} ${n.length}/${s.capacity}조 · ${n.reduce((x, a) => x + a.count, 0)}명 · 도착 ${n.filter(a => a.arrived).length}</span>`;
+  }).join('');
+  return `<div class="card"><h2>📋 신청 목록</h2>
+    <div style="margin-bottom:10px">${sum}</div>
+    <div class="row" style="margin-bottom:10px">
+      <select id="fSlot" style="max-width:280px"><option value="">전체 타임</option>${adm.slots.map(s => `<option value="${esc(s.id)}" ${appFilter.slot === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+      <select id="fStatus" style="max-width:200px">${['신청','취소','전체'].map(x => `<option ${appFilter.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <button class="btn mint sm" id="btnAddApp" style="font-size:18px;padding:12px 14px">＋ 관리자가 직접 신청 넣기</button>
+    </div>
+    <div id="addAppBox"></div>
+    <div class="tblwrap"><table><thead><tr><th>신청 시각</th><th>타임</th><th>조원</th><th>도착</th><th>상태</th><th></th></tr></thead><tbody>
+    ${list.map(a => `<tr><td>${esc(a.at)}</td><td>${esc(a.slotName)}</td><td>${membersHtml(a.members)} <span class="muted">(${a.count}명)</span></td>
+        <td>${a.status === '신청' ? `<button class="btn sm ${a.arrived ? 'mint' : 'gray'}" data-arr="${esc(a.id)}" data-on="${a.arrived ? '' : '1'}">${a.arrived ? '✔ ' + esc(a.arrived) : '미도착'}</button>` : ''}</td>
+        <td>${statusPill(a.status)}${a.status !== '신청' ? `<br><span class="muted" style="font-size:15px">${esc(a.cancelAt)}<br>${esc(a.cancelBy)}${a.cancelReason ? ' · ' + esc(a.cancelReason) : ''}</span>` : ''}</td>
+        <td>${a.status === '신청' ? `<button class="btn sm red" data-cancel="${esc(a.id)}">취소</button>` : ''}</td></tr>`).join('')
+      || '<tr><td colspan="6" class="muted">신청이 없어요.</td></tr>'}
+    </tbody></table></div></div>`;
+}
+/* --- 운영 현황 링크 --- */
+function admBoardHtml(){
+  return `<div class="card"><h2>🔗 운영 현황 링크 (과학탐구반 학생용)</h2>
+    <div class="muted" style="margin-bottom:10px">이 링크로 들어가면 <b>비밀번호 없이</b> 타임별 신청 조 명단을 볼 수 있고, 체험하러 온 조를 「도착」으로 체크할 수 있어요.
+      링크를 아는 사람만 들어갈 수 있으니 <b>동아리 단톡방 등 동아리 학생에게만</b> 보내 주세요.</div>
+    <div class="linkbox" id="boardLink">${esc(boardLink())}</div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="btnCopyLink">📋 링크 복사</button>
+      <button class="btn mint" id="btnOpenBoard">👥 운영 현황 열기</button>
+      <button class="btn red" id="btnNewKey">🔄 링크 새로 만들기</button>
+    </div>
+    <div id="boardMsg"></div>
+    <div class="muted" style="margin-top:12px">※ 링크가 다른 사람에게 퍼졌다면 「링크 새로 만들기」를 누르세요. 예전 링크는 바로 안 열리게 되고, 동아리에 새 링크를 다시 보내면 돼요.</div>
+  </div>`;
+}
+/* --- 기록 --- */
+function admLogHtml(){
+  return `<div class="card"><h2>📜 기록 (최근 400개)</h2>
+    <div class="muted" style="margin-bottom:8px">신청·취소(본인/관리자)·도착 확인·설정 변경이 모두 남아요. 전체 기록은 스프레드시트 「기록」 시트에 있어요.</div>
+    <div class="tblwrap"><table><thead><tr><th>시각</th><th>구분</th><th>내용</th><th>처리자</th></tr></thead><tbody>
+    ${adm.logs.map(l => `<tr><td style="white-space:nowrap">${esc(l[0])}</td><td><span class="pill ${/취소|실패/.test(l[1]) ? 'no' : /신청|도착/.test(l[1]) ? 'ok' : ''}">${esc(l[1])}</span></td>
+      <td>${esc(l[3])}${l[2] ? `<br><span class="muted" style="font-size:14px">${esc(l[2])}</span>` : ''}</td><td>${esc(l[4])}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">기록이 없어요.</td></tr>'}
+    </tbody></table></div></div>`;
+}
+
+function bindAdmin(){
+  const b = $('#admBody');
+  const on = (sel, fn) => { const el = $(sel, b); if (el) el.onclick = fn; };
+  /* 설정 */
+  on('#btnSaveSet', e => admDo('adminSettings', { data: {
+    booth: $('#sBooth').value, place: $('#sPlace').value, notice: $('#sNotice').value,
+    start: $('#sStart').value, end: $('#sEnd').value, maxMembers: $('#sMax').value,
+    paused: $('#sPaused').checked, canCancel: $('#sCancel').checked } }, e.currentTarget, $('#setMsg')));
+  on('#btnPreview2', () => startPreview());
+  on('#btnPwAdm', e => admDo('adminPw', { which: 'admin', pw: $('#pwAdm').value }, e.currentTarget, $('#pwMsg')));
+  /* 타임 */
+  const openSlot = s => {
+    $('#slotEditor').innerHTML = slotEditorHtml(s);
+    $('#btnCancelSlot').onclick = () => $('#slotEditor').innerHTML = '';
+    $('#btnSaveSlot').onclick = e => admDo('adminSlot', { data: { id: e.currentTarget.dataset.id, name: $('#eName').value, time: $('#eTime').value,
+      capacity: $('#eCap').value, order: $('#eOrder').value, use: $('#eUse').checked, part: $('#ePart').value } }, e.currentTarget, $('#slotMsg'));
+    $('#eName').focus();
+  };
+  on('#btnNewSlot', () => openSlot(null));
+  $$('[data-edit-slot]', b).forEach(x => x.onclick = () => openSlot(adm.slots.find(s => s.id === x.dataset.editSlot)));
+  $$('[data-del-slot]', b).forEach(x => x.onclick = async () => {
+    const s = adm.slots.find(z => z.id === x.dataset.delSlot);
+    if (await modal(`<h2>타임 삭제</h2><div class="bigbox">${esc(s.name)} (${esc(s.time)})</div>정말 지울까요?`, [{label:'아니요', v:false, cls:'gray'}, {label:'삭제', v:true, cls:'red'}]))
+      admDo('adminDelSlot', { id: s.id }, x);
+  });
+  /* 신청 목록 */
+  const fs = $('#fSlot', b); if (fs) fs.onchange = () => { appFilter.slot = fs.value; renderAdmin(); };
+  const ft = $('#fStatus', b); if (ft) ft.onchange = () => { appFilter.status = ft.value; renderAdmin(); };
+  $$('[data-arr]', b).forEach(x => x.onclick = () => admDo('adminArrive', { appId: x.dataset.arr, on: !!x.dataset.on }, x));
+  $$('[data-cancel]', b).forEach(x => x.onclick = () => cancelWithReason(x));
+  on('#btnAddApp', () => {
+    $('#addAppBox').innerHTML = `<div class="slotboard" style="background:#f4faff"><h3 style="margin-top:0">관리자 직접 신청 (신청 시간과 상관없이 넣을 수 있어요)</h3>
+      <label class="field"><span>타임</span><select id="aSlot">${adm.slots.map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${esc(s.time)})</option>`).join('')}</select></label>
+      ${[1,2,3].map(i => `<div class="grid2"><input class="a-sid" maxlength="5" inputmode="numeric" placeholder="학번 ${i}${i === 1 ? ' (대표)' : ''}"><input class="a-name" maxlength="10" placeholder="이름 ${i}"></div><div style="height:8px"></div>`).join('')}
+      <label class="field"><span>확인번호 4자리 (대표 학생에게 알려 주세요)</span><input id="aPin" maxlength="4" inputmode="numeric" style="max-width:200px"></label>
+      <div class="row"><button class="btn" id="btnAddGo">신청 넣기</button><button class="btn gray" id="btnAddClose">닫기</button></div><div id="addMsg"></div></div>`;
+    $('#btnAddClose').onclick = () => $('#addAppBox').innerHTML = '';
+    $('#btnAddGo').onclick = e => {
+      const names = $$('.a-name');
+      const members = $$('.a-sid').map((s, i) => ({ sid: s.value.trim(), name: names[i].value.trim() })).filter(m => m.sid || m.name);
+      admDo('adminAdd', { form: { slotId: $('#aSlot').value, members, pin: $('#aPin').value } }, e.currentTarget, $('#addMsg'));
+    };
+  });
+  /* 운영 현황 링크 */
+  on('#btnCopyLink', async () => {
+    try { await navigator.clipboard.writeText(boardLink()); msgBox($('#boardMsg'), '링크를 복사했어요. 동아리 학생들에게 보내 주세요.', true); }
+    catch (e) { msgBox($('#boardMsg'), '자동 복사가 안 돼요. 위 링크를 길게 눌러 직접 복사해 주세요.'); }
+  });
+  on('#btnOpenBoard', () => window.open(boardLink(), '_blank', 'noopener'));
+  on('#btnNewKey', async e => {
+    if (await modal('<h2>링크 새로 만들기</h2>예전 운영 현황 링크는 <b>바로 열리지 않게</b> 돼요. 동아리 학생들에게 새 링크를 다시 보내야 해요. 계속할까요?',
+      [{label:'아니요', v:false, cls:'gray'}, {label:'새로 만들기', v:true, cls:'red'}])) admDo('adminNewBoardKey', {}, e.currentTarget, null);
+  });
+}
+function cancelWithReason(btn){
+  const a = adm.apps.find(z => z.id === btn.dataset.cancel);
+  const root = $('#modalRoot');
+  root.innerHTML = `<div class="modal-bg"><div class="modal"><h2>관리자 취소</h2>
+    <div class="bigbox">${esc(a.slotName)} · ${membersHtml(a.members)}</div>
+    <label class="field"><span>취소 사유 (기록에 남아요, 선택)</span><input id="cReason" maxlength="100" placeholder="예) 학생 요청, 확인번호 분실"></label>
+    <div class="row" style="justify-content:flex-end"><button class="btn gray" id="cNo">닫기</button><button class="btn red" id="cYes">취소 처리</button></div></div></div>`;
+  $('#cNo').onclick = () => root.innerHTML = '';
+  $('#cYes').onclick = () => { const why = $('#cReason').value; root.innerHTML = ''; admDo('adminCancel', { appId: a.id, reason: why }, btn); };
+}
+
+/* ================= 관리자 미리보기 ================= */
+$('#btnPreview').onclick = () => startPreview();
+function startPreview(code){
+  if (!adm) return;
+  const s = adm.settings;
+  const act = adm.apps.filter(a => a.status === '신청');
+  const startMs = localInputToMs(s.start), endMs = localInputToMs(s.end);
+  const data = {
+    booth: s.booth, place: s.place, notice: s.notice, maxMembers: s.maxMembers,
+    status: { startMs: startMs && startMs > Date.now() ? startMs : Date.now() + 10 * 60000, endMs: endMs },
+    slots: adm.slots.filter(x => x.use).map(x => {
+      const used = act.filter(a => a.slotId === x.id).length;
+      return { id: x.id, name: x.name, time: x.time, capacity: x.capacity, used, remaining: Math.max(0, x.capacity - used) };
+    })
+  };
+  preview = { code: code || 'open', data };
+  resetForm(); msgBox($('#applyMsg'), '');
+  $('#previewRibbon').classList.remove('hide');
+  $('#slots').dataset.html = '';
+  $$('#previewRibbon [data-pv]').forEach(b => b.classList.toggle('on', b.dataset.pv === preview.code));
+  show('apply'); renderPublic();
+}
+$$('#previewRibbon [data-pv]').forEach(b => b.onclick = () => {
+  preview.code = b.dataset.pv;
+  $$('#previewRibbon [data-pv]').forEach(x => x.classList.toggle('on', x === b));
+  renderPublic();
+});
+$('#pvEnd').onclick = () => {
+  preview = null; resetForm(); msgBox($('#applyMsg'), '');
+  $('#previewRibbon').classList.add('hide'); $('#slots').dataset.html = ''; $('#banner').dataset.html = '';
+  show('admin');
+};
+
+/* ================= 자동 새로고침 ================= */
+setInterval(() => {
+  if (view !== 'apply') return;
+  renderBanner();
+  if (preview) return;
+  const st = pub && pub.status;
+  const needNow = st && st.code === 'before' && serverNow() >= st.startMs && Date.now() - lastFetch > 1500;
+  if (needNow || Date.now() - lastFetch > 8000 + Math.random() * 3000) loadPublic();
+}, 1000);
+setInterval(() => {
+  if (view === 'admin' && admTok && (admTab === 'apps' || admTab === 'log') && !$('#modalRoot').innerHTML && !(($('#addAppBox') || {}).innerHTML)) loadAdmin();
+}, 20000);
+
+loadPublic();
+</script>
+</body>
+</html>

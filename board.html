@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>슬러시 부스 운영 현황</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="emoji">👥🧊</div>
+    <h1 id="boothName">슬러시 부스 운영 현황</h1>
+    <div class="sub">과학탐구반 전용</div>
+  </header>
+
+  <div id="noKey" class="card hide">
+    <h2>🔗 링크가 필요해요</h2>
+    <div>선생님이 보내 준 <b>운영 현황 링크</b>로 들어와 주세요.</div>
+  </div>
+
+  <div id="main" class="hide">
+    <div class="card" style="padding:14px 18px">
+      <div class="row" style="justify-content:space-between">
+        <span class="muted" id="updated">불러오는 중…</span>
+        <button class="btn sm gray" id="btnRe" style="font-size:18px">🔄 새로고침</button>
+      </div>
+      <div class="muted" style="margin-top:6px">🔒 신청한 친구들의 학번·이름이 있어요. <b>캡처하거나 링크를 다른 사람에게 보내지 마세요.</b></div>
+      <div class="notice" style="margin-top:10px">🪑 자리는 <b>먼저 온 조부터</b> 앉아요. 체험하러 온 조는 <b>「도착」</b>을 눌러 체크해 주세요.</div>
+    </div>
+    <div class="subnav" id="slotNav"></div>
+    <div id="slotBox"></div>
+    <div id="err"></div>
+  </div>
+
+  <footer>
+    이 신청 사이트(프로그램 코드, 디자인, 안내 글)의 저작권은 제작자 혜민쌤에게 있으며, 허락 없이 복제·수정·배포·게시하거나 상업적으로 이용하는 것을 금지합니다.<br>
+    © 2026 혜민쌤 · 신남중학교 과학탐구반
+  </footer>
+</div>
+
+<script>
+const CFG = window.SLUSH_CONFIG || {};
+const API_URL = CFG.API_URL || '';
+let plan = null, planErr = '';
+const $ = (s, el) => (el || document).querySelector(s);
+const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+async function api(action, data){
+  if (!/^https:\/\/script\.google\.com\//.test(API_URL)) return { ok:false, msg:'config.js에 Apps Script 주소가 아직 없어요.' };
+  const res = await fetch(API_URL, { method:'POST', body: JSON.stringify(Object.assign({ action }, data || {})) });
+  return res.json();
+}
+const KEY = (new URLSearchParams(location.hash.replace(/^#/, ''))).get('k') || '';
+let data = null, curSlot = 'all', loading = false;
+
+if (!KEY) $('#noKey').classList.remove('hide');
+else { $('#main').classList.remove('hide'); load(); setInterval(() => { if (!document.hidden) load(); }, 15000); }
+
+async function load(){
+  if (loading) return;
+  loading = true;
+  try {
+    const [r] = await Promise.all([api('board', { key: KEY }), loadPlan()]);
+    if (!r.ok){ $('#err').innerHTML = `<div class="msg err">${esc(r.msg)}</div>`; if (r.code === 'auth'){ $('#slotBox').innerHTML = ''; $('#slotNav').innerHTML = ''; } return; }
+    $('#err').innerHTML = '';
+    data = r; render();
+  } catch (e) { $('#err').innerHTML = '<div class="msg err">인터넷 연결이 불안정해요. 잠시 뒤 자동으로 다시 불러와요.</div>'; }
+  finally { loading = false; }
+}
+$('#btnRe').onclick = load;
+
+function render(){
+  $('#boothName').textContent = (data.booth || '슬러시 부스') + ' 운영 현황';
+  $('#updated').textContent = '마지막 업데이트 ' + data.updated.slice(11) + ' · 15초마다 자동 새로고침';
+  if (curSlot !== 'all' && !data.slots.some(s => s.id === curSlot)) curSlot = 'all';
+  $('#slotNav').innerHTML = `<button data-s="all" class="${curSlot === 'all' ? 'on' : ''}">전체</button>` +
+    data.slots.map(s => `<button data-s="${esc(s.id)}" class="${curSlot === s.id ? 'on' : ''}">${esc(s.name)}</button>`).join('');
+  $$('#slotNav button').forEach(b => b.onclick = () => { curSlot = b.dataset.s; render(); });
+  const list = data.slots.filter(s => curSlot === 'all' || s.id === curSlot);
+  $('#slotBox').innerHTML = list.map(s => {
+    const arr = s.groups.filter(g => g.arrived).length;
+    const people = s.groups.reduce((x, g) => x + g.members.length, 0);
+    return `<div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <h2 style="margin:0">⏰ ${esc(s.name)} <span class="muted">${esc(s.time)}</span></h2>
+        <span><span class="pill">신청 ${s.used}/${s.capacity}조 · ${people}명</span> <span class="pill ok">도착 ${arr}조</span></span>
+      </div>
+      ${staffHtml(s.part)}
+      ${s.groups.length ? s.groups.map((g, i) => `
+        <div class="grp ${g.arrived ? 'arr' : ''}">
+          <div class="no">${i + 1}</div>
+          <div class="who">${g.members.map(m => esc(m.sid) + ' ' + esc(m.name)).join(', ')}<small>${g.members.length}명${g.arrived ? ' · ' + esc(g.arrived) + ' 도착' : ''}</small></div>
+          <button class="arrbtn ${g.arrived ? 'on' : ''}" data-id="${esc(g.id)}" data-on="${g.arrived ? '' : '1'}">${g.arrived ? '✔ 도착' : '도착'}</button>
+        </div>`).join('') : '<div class="muted" style="padding:10px">아직 신청한 조가 없어요.</div>'}
+      <div class="muted" style="margin-top:8px;font-size:16px">번호는 신청한 순서예요. 자리는 먼저 온 조부터 앉아요.</div>
+    </div>`;
+  }).join('') || '<div class="card muted">열린 타임이 없어요.</div>';
+  $('#slotBox').insertAdjacentHTML('beforeend', rosterHtml());
+  $$('.arrbtn').forEach(b => b.onclick = async () => {
+    const on = !!b.dataset.on;
+    if (!on && !confirmUndo()) return;
+    b.disabled = true; b.textContent = '…';
+    try {
+      const r = await api('boardArrive', { key: KEY, appId: b.dataset.id, on });
+      if (!r.ok) $('#err').innerHTML = `<div class="msg err">${esc(r.msg)}</div>`;
+    } catch (e) { $('#err').innerHTML = '<div class="msg err">저장이 안 됐어요. 다시 눌러 주세요.</div>'; }
+    load();
+  });
+}
+/* ---------- 부스 운영 계획판(Supabase booth_slots) 읽기 — 읽기만, 쓰기 없음 ---------- */
+async function loadPlan(){
+  const u = String(CFG.SUPABASE_URL || ''), k = String(CFG.SUPABASE_ANON_KEY || '');
+  if (!/^https:\/\//.test(u) || !k || /여기에/.test(u + k)){ plan = null; planErr = 'config.js에 계획판 Supabase 주소·키가 아직 없어요.'; return; }
+  const headers = { apikey: k };
+  if (!/^sb_/.test(k)) headers.Authorization = 'Bearer ' + k;
+  try {
+    const r = await fetch(u.replace(/\/+$/, '') + '/rest/v1/booth_slots?select=shift,table_no,seat,name&order=shift.asc,table_no.asc,seat.asc', { headers });
+    if (!r.ok) throw new Error(r.status);
+    const rows = await r.json();
+    plan = { 1: {}, 2: {} };
+    rows.forEach(x => {
+      if (!plan[x.shift]) return;
+      (plan[x.shift][x.table_no] = plan[x.shift][x.table_no] || []);
+      if (x.name) plan[x.shift][x.table_no][x.seat - 1] = x.name;
+    });
+    planErr = '';
+  } catch (e) { planErr = '부스 운영 계획판 명단을 불러오지 못했어요. (잠시 뒤 자동으로 다시 시도)'; }
+}
+function names(arr){ const n = (arr || []).filter(Boolean); return n.length ? n.map(esc).join(', ') : '<span class="muted">비어 있음</span>'; }
+function tables(){ const t = new Set([1,2,3,4,5,6]); if (plan) [1,2].forEach(s => Object.keys(plan[s]).forEach(k => t.add(+k))); return [...t].sort((a,b) => a - b); }
+function staffHtml(part){
+  if (!part || !plan) return '';
+  const sh = part === '1부' ? 1 : 2;
+  return `<div class="notice" style="margin-bottom:10px;font-size:18px"><b>🧑‍🔬 이 타임 운영: 계획판 ${esc(part)}</b><br>
+    ${tables().map(t => `테이블 ${t}: ${names(plan[sh][t])}`).join(' &nbsp;|&nbsp; ')}</div>`;
+}
+function rosterHtml(){
+  const planBtn = /^https:\/\//.test(String(CFG.PLAN_URL || '')) ? `<a class="btn sm gray" style="text-decoration:none;font-size:17px" href="${esc(CFG.PLAN_URL)}" target="_blank" rel="noopener">📋 부스 운영 계획판 열기</a>` : '';
+  if (!plan) return `<div class="card"><h2>🧑‍🤝‍🧑 테이블 담당 운영 명단</h2><div class="muted">${esc(planErr || '불러오는 중…')}</div>${planBtn}</div>`;
+  return `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h2 style="margin:0">🧑‍🤝‍🧑 테이블 담당 운영 명단</h2>${planBtn}</div>
+    <div class="muted" style="margin-bottom:8px;font-size:16px">부스 운영 계획판 ① 배정판에 적힌 이름이 그대로 나와요. 이름을 바꾸려면 계획판에서 고치세요.</div>
+    <div class="tblwrap"><table><thead><tr><th>테이블</th><th>1부 담당</th><th>2부 담당</th></tr></thead><tbody>
+    ${tables().map(t => `<tr><td><b>${t}</b></td><td>${names(plan[1][t])}</td><td>${names(plan[2][t])}</td></tr>`).join('')}
+    </tbody></table></div>
+    ${planErr ? `<div class="msg err">${esc(planErr)}</div>` : ''}
+    <div class="muted" style="margin-top:8px;font-size:16px">테이블 담당 2명이 설명·보충·정리·스탬프까지 그 테이블의 모든 일을 맡아요.</div></div>`;
+}
+function confirmUndo(){ return window.confirm('도착 체크를 취소할까요?'); }
+</script>
+</body>
+</html>
