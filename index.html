@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
 <title>과학탐구반 슬러시 체험 사전신청</title>
 <link rel="stylesheet" href="style.css">
 <script src="config.js"></script>
@@ -241,13 +241,14 @@ function renderPublic(){
   renderBanner();
   const box = $('#slots');
   if (!d.slots.length){ box.innerHTML = '<div class="loading">아직 열린 타임이 없어요.</div>'; box.dataset.html = ''; return; }
-  if (selSlot && !d.slots.some(s => s.id === selSlot && s.remaining > 0)) selSlot = null;
+  if (selSlot && !d.slots.some(s => s.id === selSlot && (s.remaining > 0 || s.soloOpen))) selSlot = null;
   const html = d.slots.map(s => {
-    const full = s.remaining <= 0;
+    const soloOnly = s.remaining <= 0 && s.soloOpen;
+    const full = s.remaining <= 0 && !soloOnly;
     const pct = s.capacity ? Math.min(100, Math.round(s.used / s.capacity * 100)) : 100;
     return `<button class="slot ${full ? 'full' : ''} ${selSlot === s.id ? 'sel' : ''}" data-id="${esc(s.id)}" ${full ? 'disabled' : ''}>
       <div class="nm">${esc(s.name)}</div><div class="tm">⏰ ${esc(s.time)}</div>
-      <div class="rem">${full ? '<b>마감</b>' : `남은 자리 <b>${s.remaining}</b>`} <span class="muted">/ ${s.capacity}</span></div>
+      <div class="rem">${full ? '<b>마감</b> <span class="muted">/ ' + s.capacity + '</span>' : soloOnly ? '<b style="font-size:22px">🙋 혼자(1명) 신청 가능</b>' : `남은 자리 <b>${s.remaining}</b> <span class="muted">/ ${s.capacity}</span>`}</div>
       <div class="bar"><i style="width:${pct}%"></i></div></button>`;
   }).join('');
   if (box.dataset.html === html) return; // 바뀐 게 없으면 다시 그리지 않음
@@ -370,6 +371,7 @@ $('#btnApply').onclick = async () => {
     if (!/^[가-힣A-Za-z]{2,10}$/.test(m.name)) return msgBox(out, `${m.sid} 학생의 이름을 정확히 적어 주세요.`);
   }
   if (new Set(ms.map(m => m.sid)).size !== ms.length) return msgBox(out, '같은 학번이 두 번 적혀 있어요.');
+  if (slot.remaining <= 0 && slot.soloOpen && ms.length > 1) return msgBox(out, `「${slot.name}」은 이제 혼자(1명) 신청만 가능해요. 다른 타임을 골라 주세요.`);
   const pin = $('#pin').value;
   if (!/^\d{4}$/.test(pin)) return msgBox(out, '③ 확인번호를 숫자 4자리로 정해 주세요.');
   if (pin !== $('#pin2').value) return msgBox(out, '③ 확인번호 두 칸이 서로 달라요. 다시 확인해 주세요.');
@@ -377,7 +379,6 @@ $('#btnApply').onclick = async () => {
 
   const go = await modal(`<h2>이렇게 신청할까요?</h2>
     <div class="bigbox">⏰ <b>${esc(slot.name)}</b> (${esc(slot.time)})<br>👫 ${ms.length}명: ${membersHtml(ms)}</div>
-    ${ms.length === 1 ? '<div class="msg err">혼자 신청하면 자리 1개를 혼자 쓰게 돼요. 친구와 2명이 함께 신청하는 것을 추천해요.</div>' : ''}
     <div class="warn" style="margin-top:10px;padding:12px 14px;font-weight:800">신청하면 이 시간에 꼭 와야 해요. 못 오면 꼭 미리 취소!</div>`,
     [{label:'다시 볼게요', v:false, cls:'gray'}, {label:'신청하기', v:true}]);
   if (!go) return;
@@ -584,7 +585,7 @@ function admAppsHtml(){
     </div>
     <div id="addAppBox"></div>
     <div class="tblwrap"><table><thead><tr><th>신청 시각</th><th>타임</th><th>조원</th><th>도착</th><th>상태</th><th></th></tr></thead><tbody>
-    ${list.map(a => `<tr><td>${esc(a.at)}</td><td>${esc(a.slotName)}</td><td>${membersHtml(a.members)} <span class="muted">(${a.count}명)</span></td>
+    ${list.map(a => `<tr><td>${esc(a.at)}</td><td>${esc(a.slotName)}</td><td>${membersHtml(a.members)} <span class="muted">(${a.count}명)</span>${a.status === '신청' && a.count === 1 ? (() => { const p = adm.apps.find(z => z.id === a.pair && z.status === '신청'); return p ? `<br><span class="pill ok">🤝 자동 짝: ${membersHtml(p.members)}</span>` : '<br><span class="pill">🙋 짝 기다리는 중</span>'; })() : ''}</td>
         <td>${a.status === '신청' ? `<button class="btn sm ${a.arrived ? 'mint' : 'gray'}" data-arr="${esc(a.id)}" data-on="${a.arrived ? '' : '1'}">${a.arrived ? '✔ ' + esc(a.arrived) : '미도착'}</button>` : ''}</td>
         <td>${statusPill(a.status)}${a.status !== '신청' ? `<br><span class="muted" style="font-size:15px">${esc(a.cancelAt)}<br>${esc(a.cancelBy)}${a.cancelReason ? ' · ' + esc(a.cancelReason) : ''}</span>` : ''}</td>
         <td>${a.status === '신청' ? `<button class="btn sm red" data-cancel="${esc(a.id)}">취소</button>` : ''}</td></tr>`).join('')
@@ -692,8 +693,10 @@ function startPreview(code){
     booth: s.booth, place: s.place, notice: s.notice, maxMembers: s.maxMembers,
     status: { startMs: startMs && startMs > Date.now() ? startMs : Date.now() + 10 * 60000, endMs: endMs },
     slots: adm.slots.filter(x => x.use).map(x => {
-      const used = act.filter(a => a.slotId === x.id).length;
-      return { id: x.id, name: x.name, time: x.time, capacity: x.capacity, used, remaining: Math.max(0, x.capacity - used) };
+      const list = act.filter(a => a.slotId === x.id), ids = new Set(list.map(a => a.id));
+      const used = list.filter(a => !(a.pair && ids.has(a.pair) && a.pair < a.id)).length;
+      const soloOpen = list.some(a => a.count === 1 && !(a.pair && ids.has(a.pair)));
+      return { id: x.id, name: x.name, time: x.time, capacity: x.capacity, used, remaining: Math.max(0, x.capacity - used), soloOpen };
     })
   };
   preview = { code: code || 'before', data }; entered = false;
