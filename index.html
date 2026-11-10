@@ -34,6 +34,15 @@
 
   <!-- ───── 체험 신청 ───── -->
   <section id="v-apply">
+    <!-- 대기 화면: 신청 시작 전에는 이것만 보임 (야구 예매처럼) -->
+    <div id="gate" class="gate">
+      <div class="gate-title" id="gateTitle">🥤 체험 사전신청</div>
+      <div class="gate-sub" id="gateSub">불러오는 중…</div>
+      <div class="gate-count" id="gateCount"></div>
+      <button class="gate-btn" id="gateBtn" disabled>불러오는 중…</button>
+      <div class="gate-note" id="gateNote"></div>
+    </div>
+    <div id="applyBody" class="hide">
     <div id="banner" class="banner b-before"><span class="big">불러오는 중…</span></div>
 
     <div class="card" id="noticeCard"><div class="notice pre" id="notice"></div></div>
@@ -87,6 +96,7 @@
       <button class="btn full" id="btnApply" disabled>신청하기</button>
       <div id="applyMsg"></div>
     </div>
+    </div><!-- /applyBody -->
   </section>
 
   <!-- ───── 내 신청 확인·취소 ───── -->
@@ -255,9 +265,50 @@ function currentCode(){
   if (code === 'open' && st.endMs && serverNow() >= st.endMs) code = 'ended';
   return code;
 }
+let entered = false; // [신청하기]를 눌러 신청 화면에 들어왔는지
+function renderGate(){
+  const d = preview ? preview.data : pub;
+  const code = d ? currentCode() : 'loading';
+  if (entered && code !== 'open') entered = false;       // 마감·중지되면 다시 대기 화면으로
+  const showBody = entered && code === 'open';
+  $('#gate').classList.toggle('hide', showBody);
+  $('#applyBody').classList.toggle('hide', !showBody);
+  if (showBody) return;
+  const btn = $('#gateBtn'), cnt = $('#gateCount'), sub = $('#gateSub'), note = $('#gateNote');
+  const g = document.getElementById('gate');
+  g.className = 'gate ' + (code === 'open' ? 'g-open' : code === 'before' || code === 'opening' ? 'g-before' : 'g-closed');
+  btn.classList.remove('hide');
+  if (code === 'before' && d){
+    const left = Math.max(0, d.status.startMs - (preview ? Date.now() : serverNow()));
+    const t = Math.floor(left / 1000), dd = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+    sub.textContent = fmtMs(d.status.startMs) + ' 신청 시작';
+    cnt.innerHTML = `<small>신청 시작까지</small>${dd ? dd + '일 ' : ''}${pad(h)}:${pad(m)}:${pad(sec)}`;
+    btn.disabled = true; btn.textContent = '⏳ 아직 신청 시작 전이에요';
+    note.textContent = '시간이 되면 버튼이 자동으로 켜져요. 새로고침하지 않아도 돼요!';
+  } else if (code === 'opening'){
+    sub.textContent = '곧 열려요…'; cnt.innerHTML = '<small>신청 시작까지</small>00:00:00';
+    btn.disabled = true; btn.textContent = '⏳ 잠시만요…'; note.textContent = '';
+  } else if (code === 'open'){
+    sub.textContent = '🟢 지금 신청할 수 있어요!'; cnt.innerHTML = '';
+    btn.disabled = false; btn.textContent = '🥤 신청하기';
+    note.textContent = '버튼을 누르면 신청 화면으로 들어가요.' + (d.status.endMs ? ' (마감: ' + fmtMs(d.status.endMs) + ')' : '');
+  } else {
+    cnt.innerHTML = ''; btn.classList.add('hide');
+    sub.textContent = code === 'ended' ? '⛔ 신청 시간이 끝났어요' : code === 'paused' ? '⏸️ 신청을 잠시 멈췄어요' : code === 'unset' ? '📅 신청 시작 시간이 아직 정해지지 않았어요' : '불러오는 중…';
+    note.textContent = code === 'ended' ? '신청했는데 못 오게 되었다면 [🔎 내 신청 확인·취소]에서 꼭 취소해 주세요.' : '';
+  }
+}
+$('#gateBtn').onclick = () => {
+  if (currentCode() !== 'open') return;
+  entered = true; lastFetch = 0;
+  renderGate(); window.scrollTo(0, 0);
+  if (!preview) loadPublic();
+};
+
 function renderBanner(){
   const d = preview ? preview.data : pub;
   if (!d) return;
+  renderGate();
   const st = d.status, b = $('#banner'), btn = $('#btnApply');
   const code = currentCode();
   const now = preview ? Date.now() : serverNow();
@@ -645,7 +696,7 @@ function startPreview(code){
       return { id: x.id, name: x.name, time: x.time, capacity: x.capacity, used, remaining: Math.max(0, x.capacity - used) };
     })
   };
-  preview = { code: code || 'open', data };
+  preview = { code: code || 'before', data }; entered = false;
   resetForm(); msgBox($('#applyMsg'), '');
   $('#previewRibbon').classList.remove('hide');
   $('#slots').dataset.html = '';
@@ -653,12 +704,12 @@ function startPreview(code){
   show('apply'); renderPublic();
 }
 $$('#previewRibbon [data-pv]').forEach(b => b.onclick = () => {
-  preview.code = b.dataset.pv;
+  preview.code = b.dataset.pv; entered = false;
   $$('#previewRibbon [data-pv]').forEach(x => x.classList.toggle('on', x === b));
   renderPublic();
 });
 $('#pvEnd').onclick = () => {
-  preview = null; resetForm(); msgBox($('#applyMsg'), '');
+  preview = null; entered = false; resetForm(); msgBox($('#applyMsg'), '');
   $('#previewRibbon').classList.add('hide'); $('#slots').dataset.html = ''; $('#banner').dataset.html = '';
   show('admin');
 };
