@@ -3,10 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>슬러시 부스 운영 현황</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #printArea{display:none}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body{background:#fff!important;font-size:13pt;color:#000}
+    .wrap,.screen-only,#printPick{display:none!important}
+    #printArea{display:block}
+    .ppage{page-break-after:always;break-after:page}
+    .ppage:last-child{page-break-after:auto;break-after:auto}
+    .phead{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #000;padding-bottom:4px;margin-bottom:6px}
+    .ptitle{font-size:19pt}
+    .ptime{font-size:15pt;margin-left:6px}
+    .pmeta{font-size:10pt}
+    .pstaff{font-size:11pt;margin:4px 0 8px;line-height:1.5}
+    .ptable{width:100%;border-collapse:collapse;font-size:14pt}
+    .ptable th,.ptable td{border:1.5px solid #000;padding:7px 6px;vertical-align:middle;color:#000;background:#fff}
+    .ptable th{font-size:11pt;background:#eee!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .ptable tr{break-inside:avoid}
+    .ptable tr.blank td{height:34px}
+    .ptable .c{text-align:center}
+    .pbox{display:inline-block;width:22px;height:22px;border:2px solid #000;border-radius:3px}
+    .pnote{font-size:10pt;margin-top:6px}
+  }
+</style>
 <script src="config.js"></script>
 </head>
 <body>
@@ -17,6 +41,7 @@
     <div class="sub">과학탐구반 전용</div>
   </header>
 
+  <div id="printPick"></div>
   <div id="noKey" class="card hide">
     <h2>🔗 링크가 필요해요</h2>
     <div>선생님이 보내 준 <b>운영 현황 링크</b>로 들어와 주세요.</div>
@@ -26,7 +51,10 @@
     <div class="card" style="padding:14px 18px">
       <div class="row" style="justify-content:space-between">
         <span class="muted" id="updated">불러오는 중…</span>
-        <button class="btn sm gray" id="btnRe" style="font-size:18px">🔄 새로고침</button>
+        <span class="row" style="gap:8px">
+          <button class="btn sm" id="btnPrint" style="font-size:18px">🖨️ 종이로 인쇄</button>
+          <button class="btn sm gray" id="btnRe" style="font-size:18px">🔄 새로고침</button>
+        </span>
       </div>
       <div class="muted" style="margin-top:6px">🔒 신청한 친구들의 학번·이름이 있어요. <b>캡처하거나 링크를 다른 사람에게 보내지 마세요.</b></div>
       <div class="notice" style="margin-top:10px">🪑 자리는 <b>먼저 온 조부터</b> 앉아요. 체험하러 온 조는 <b>「도착」</b>을 눌러 체크해 주세요.</div>
@@ -35,6 +63,11 @@
     <div id="slotBox"></div>
     <div id="err"></div>
   </div>
+</div>
+
+<!-- 인쇄용 (화면에는 안 보이고, 인쇄할 때만 나옴) -->
+<div id="printArea"></div>
+<div class="wrap screen-only" style="padding-top:0">
 
   <footer>
     이 신청 사이트(프로그램 코드, 디자인, 안내 글)의 저작권은 제작자 혜민쌤에게 있으며, 허락 없이 복제·수정·배포·게시하거나 상업적으로 이용하는 것을 금지합니다.<br>
@@ -72,6 +105,53 @@ async function load(){
   finally { loading = false; }
 }
 $('#btnRe').onclick = load;
+
+/* ---------- 종이 인쇄 (전자기기 없이 볼 수 있게) ---------- */
+$('#btnPrint').onclick = async () => {
+  if (!data) return;
+  const slots = data.slots;
+  const opts = `<label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="radio" name="pv" value="all" checked> 전체 타임 (타임마다 한 장씩)</label>` +
+    slots.map(s => `<label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="radio" name="pv" value="${esc(s.id)}"> ${esc(s.name)} <span class="muted">${esc(s.time)}</span></label>`).join('');
+  const root = document.getElementById('printPick');
+  root.innerHTML = `<div class="modal-bg"><div class="modal"><h2>🖨️ 무엇을 인쇄할까요?</h2>${opts}
+    <label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="checkbox" id="pRoster" checked> 마지막 장에 테이블 담당 운영 명단 넣기</label>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn gray" id="pNo">닫기</button><button class="btn" id="pGo">인쇄하기</button></div></div></div>`;
+  $('#pNo').onclick = () => root.innerHTML = '';
+  $('#pGo').onclick = async () => {
+    const v = (document.querySelector('input[name=pv]:checked') || {}).value || 'all';
+    const withRoster = $('#pRoster').checked;
+    root.innerHTML = '';
+    await load();                       // 인쇄 직전 최신 명단으로
+    buildPrint(v, withRoster);
+    setTimeout(() => window.print(), 200);
+  };
+};
+function buildPrint(which, withRoster){
+  const now = data.updated;
+  const list = data.slots.filter(s => which === 'all' || s.id === which);
+  const box = '<span class="pbox"></span>';
+  const pages = list.map(s => {
+    const sh = s.part === '1부' ? 1 : s.part === '2부' ? 2 : 0;
+    const staff = sh && plan ? `<div class="pstaff"><b>운영(${esc(s.part)}):</b> ${tables().map(t => `테이블 ${t} ${(plan[sh][t] || []).filter(Boolean).map(esc).join('·') || '—'}`).join(' &nbsp;/&nbsp; ')}</div>` : '';
+    const rows = s.groups.map((g, i) => `<tr><td class="c">${i + 1}</td><td>${g.members.map(m => esc(m.sid) + ' ' + esc(m.name)).join(', ')}</td><td class="c">${g.members.length}</td><td class="c">${box}</td><td class="c">${box}</td><td></td></tr>`).join('');
+    const blanks = Array.from({ length: 3 }, () => `<tr class="blank"><td class="c"></td><td></td><td></td><td class="c">${box}</td><td class="c">${box}</td><td></td></tr>`).join('');
+    return `<section class="ppage">
+      <div class="phead"><div><b class="ptitle">${esc(data.booth || '슬러시 부스')} — ${esc(s.name)}</b> <span class="ptime">${esc(s.time)}</span></div>
+        <div class="pmeta">신청 ${s.used}/${s.capacity}조 · 인쇄 ${esc(now.slice(5, 16))}</div></div>
+      ${staff}
+      <table class="ptable"><thead><tr><th style="width:9%">번호</th><th>조원 (학번 이름)</th><th style="width:8%">인원</th><th style="width:10%">도착</th><th style="width:12%">체험 완료<br>(스탬프)</th><th style="width:20%">메모</th></tr></thead>
+      <tbody>${rows || ''}${blanks}</tbody></table>
+      <div class="pnote">✔ 체험하러 온 조는 「도착」 칸에, 체험을 마치고 스탬프를 찍어 주면 「체험 완료」 칸에 표시하세요. · 자리는 먼저 온 조부터 앉아요. · 빈 줄은 현장 추가용이에요.</div>
+      <div class="pnote">🔒 친구들 개인정보가 있어요. 행사가 끝나면 이 종이는 선생님께 돌려주세요.</div>
+    </section>`;
+  });
+  let roster = '';
+  if (withRoster && plan) roster = `<section class="ppage"><div class="phead"><b class="ptitle">테이블 담당 운영 명단</b><div class="pmeta">인쇄 ${esc(now.slice(5, 16))}</div></div>
+    <table class="ptable"><thead><tr><th style="width:12%">테이블</th><th>1부 담당</th><th style="width:10%">출석</th><th>2부 담당</th><th style="width:10%">출석</th></tr></thead><tbody>
+    ${tables().map(t => `<tr><td class="c"><b>${t}</b></td><td>${(plan[1][t] || []).filter(Boolean).map(esc).join(', ') || ''}</td><td class="c">${box}</td><td>${(plan[2][t] || []).filter(Boolean).map(esc).join(', ') || ''}</td><td class="c">${box}</td></tr>`).join('')}
+    </tbody></table><div class="pnote">테이블 담당 2명이 설명·보충·정리·스탬프까지 그 테이블의 모든 일을 맡아요.</div></section>`;
+  document.getElementById('printArea').innerHTML = (pages.join('') || '<section class="ppage">열린 타임이 없어요.</section>') + roster;
+}
 
 function render(){
   $('#boothName').textContent = (data.booth || '슬러시 부스') + ' 운영 현황';
