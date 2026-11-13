@@ -136,3 +136,8 @@ footer{text-align:center;color:#8a9aab;font-size:13px;margin-top:26px;line-heigh
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 .gate-note{font-size:18px;color:var(--gray);margin-top:16px}
 @media(max-width:640px){.gate-count{font-size:54px}.gate-btn{font-size:26px}}
+
+/* 신청 완료: 몇 시까지 어디로 오는지 */
+.come{background:#fff4d6;border:3px solid #f2b705;border-radius:16px;padding:14px 16px;margin:10px 0;font-size:24px;line-height:1.45;text-align:center;color:#5a3d00}
+.come b{font-size:26px}
+.come small{display:block;font-size:17px;font-weight:600;margin-top:6px;color:#7a5600}
