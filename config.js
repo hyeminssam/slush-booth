@@ -5,7 +5,7 @@
 window.SLUSH_CONFIG = {
   // Apps Script를 "웹 앱"으로 배포하고 받은 주소를 따옴표 안에 붙여넣으세요.
   // 예) 'https://script.google.com/macros/s/AKfycb.../exec'
-  API_URL: 'https://script.google.com/macros/s/AKfycbzW3GuQPoosyVvyjubMxSvTS3fJpkN3XsOITd60CS8T83dwzlq8EPnFhC_FmHt0bdM_/exec',
+  API_URL: 'https://script.google.com/macros/s/AKfycbxTlrmescGFIzyubNULze-qttdkKPzoBZLIfRoW1U-VyTqyCujp6qcS-ZQS8sDJeqFj/exec',
 
   // ── 부스 운영 계획판 연동 (운영 현황에 테이블 담당 명단이 나와요) ──
   // 계획판 config.js에 있는 SUPABASE_URL, SUPABASE_ANON_KEY 두 줄을 그대로 복사해 넣으세요.
