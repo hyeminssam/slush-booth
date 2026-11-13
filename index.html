@@ -49,14 +49,14 @@
 
     <div class="card">
       <h2>① 체험 타임 고르기</h2>
-      <div class="muted" style="margin-bottom:10px">남은 자리는 자동으로 바뀌어요. 자리 1개 = 1조(최대 <span class="maxN">3</span>명)<br>
+      <div class="muted" style="margin-bottom:10px">남은 자리는 자동으로 바뀌어요. 자리 1개 = 1조(최대 4명)<br>
         🪑 자리는 정해져 있지 않아요. 체험 시간에 <b>먼저 온 조부터</b> 앉아요.</div>
       <div class="slots" id="slots"><div class="loading">불러오는 중…</div></div>
     </div>
 
     <div class="card">
       <h2>② 함께 체험할 조원 적기</h2>
-      <div class="notice" style="margin-bottom:14px">👫 <b>2명이 한 조</b>로 신청하는 것을 추천해요. (최대 <span class="maxN">3</span>명)<br>
+      <div class="notice" style="margin-bottom:14px">👫 친구와 함께 <b>최대 <span class="maxN">4</span>명</b>까지 신청할 수 있어요.<br>
         함께 올 친구와 <b>미리 상의</b>하고, 친구 이름을 <b>모두</b> 적어 주세요. 여기 적힌 친구는 따로 또 신청할 수 없어요!</div>
       <div id="memberRows"></div>
     </div>
@@ -173,6 +173,17 @@ function busy(btn, on, label){
   if (on){ btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span> ' + (label || '처리 중…'); }
   else { btn.disabled = false; btn.innerHTML = btn.dataset.label || btn.innerHTML; }
 }
+/** "10:00~10:20" → "10시 00분" (타임 시작 시각) */
+function startClock(t){
+  const m = String(t || '').match(/(\d{1,2})\s*(?::|시)\s*(\d{1,2})?/);
+  return m ? `${+m[1]}시 ${pad(m[2] || 0)}분` : String(t || '');
+}
+function placeName(){ const d = preview ? preview.data : pub; return (d && d.place) || '3층 물상실'; }
+/** "○시 ○○분까지 각자 3층 물상실로 꼭 오세요" 안내 상자 */
+function comeBox(slotTime){
+  return `<div class="come">📍 <b>${esc(startClock(slotTime))}까지</b><br><b>각자 ${esc(placeName())}</b>로 꼭 와 주세요!
+    <small>함께 신청한 친구를 기다리지 말고, 한 명씩 개별로 시간 맞춰 오세요.</small></div>`;
+}
 function membersHtml(ms){ return (ms || []).map(m => `${esc(m.sid)} ${esc(m.name)}`).join(', '); }
 function onlyDigits(el, n){ el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, '').slice(0, n); }); }
 function pad(n){ return String(n).padStart(2, '0'); }
@@ -241,14 +252,14 @@ function renderPublic(){
   renderBanner();
   const box = $('#slots');
   if (!d.slots.length){ box.innerHTML = '<div class="loading">아직 열린 타임이 없어요.</div>'; box.dataset.html = ''; return; }
-  if (selSlot && !d.slots.some(s => s.id === selSlot && (s.remaining > 0 || s.soloOpen))) selSlot = null;
+  if (selSlot && !d.slots.some(s => s.id === selSlot && (s.remaining > 0 || s.openSpace > 0))) selSlot = null;
   const html = d.slots.map(s => {
-    const soloOnly = s.remaining <= 0 && s.soloOpen;
-    const full = s.remaining <= 0 && !soloOnly;
+    const limit = s.remaining <= 0 ? (s.openSpace || 0) : 0; // 자리가 다 찼을 때 더 받을 수 있는 인원
+    const full = s.remaining <= 0 && !limit;
     const pct = s.capacity ? Math.min(100, Math.round(s.used / s.capacity * 100)) : 100;
     return `<button class="slot ${full ? 'full' : ''} ${selSlot === s.id ? 'sel' : ''}" data-id="${esc(s.id)}" ${full ? 'disabled' : ''}>
       <div class="nm">${esc(s.name)}</div><div class="tm">⏰ ${esc(s.time)}</div>
-      <div class="rem">${full ? '<b>마감</b> <span class="muted">/ ' + s.capacity + '</span>' : soloOnly ? '<b style="font-size:22px">🙋 혼자(1명) 신청 가능</b>' : `남은 자리 <b>${s.remaining}</b> <span class="muted">/ ${s.capacity}</span>`}</div>
+      <div class="rem">${full ? '<b>마감</b> <span class="muted">/ ' + s.capacity + '</span>' : limit ? `<b style="font-size:22px">🙋 ${limit === 1 ? '혼자(1명)' : limit + '명 이하'} 신청 가능</b>` : `남은 자리 <b>${s.remaining}</b> <span class="muted">/ ${s.capacity}</span>`}</div>
       <div class="bar"><i style="width:${pct}%"></i></div></button>`;
   }).join('');
   if (box.dataset.html === html) return; // 바뀐 게 없으면 다시 그리지 않음
@@ -341,7 +352,7 @@ function renderBanner(){
 function buildMemberRows(n){
   const old = readMembersRaw();
   memberMax = n;
-  const labels = ['대표자 (나)<small>신청서를 쓰는 사람</small>', '함께 올 친구 2<small>추천!</small>', '함께 올 친구 3<small>(선택)</small>'];
+  const labels = ['대표자 (나)<small>신청서를 쓰는 사람</small>', '함께 올 친구 2<small>(선택)</small>', '함께 올 친구 3<small>(선택)</small>', '함께 올 친구 4<small>(선택)</small>'];
   $('#memberRows').innerHTML = Array.from({length: n}, (_, i) => `
     <div class="mrow"><div class="lab">${labels[i]}</div>
       <input class="m-sid" inputmode="numeric" maxlength="5" placeholder="학번 5자리" value="${esc(old[i] ? old[i].sid : '')}">
@@ -371,7 +382,7 @@ $('#btnApply').onclick = async () => {
     if (!/^[가-힣A-Za-z]{2,10}$/.test(m.name)) return msgBox(out, `${m.sid} 학생의 이름을 정확히 적어 주세요.`);
   }
   if (new Set(ms.map(m => m.sid)).size !== ms.length) return msgBox(out, '같은 학번이 두 번 적혀 있어요.');
-  if (slot.remaining <= 0 && slot.soloOpen && ms.length > 1) return msgBox(out, `「${slot.name}」은 이제 혼자(1명) 신청만 가능해요. 다른 타임을 골라 주세요.`);
+  if (slot.remaining <= 0 && ms.length > (slot.openSpace || 0)) return msgBox(out, `「${slot.name}」은 이제 ${slot.openSpace === 1 ? '혼자(1명)' : slot.openSpace + '명 이하'} 신청만 가능해요. 인원을 줄이거나 다른 타임을 골라 주세요.`);
   const pin = $('#pin').value;
   if (!/^\d{4}$/.test(pin)) return msgBox(out, '③ 확인번호를 숫자 4자리로 정해 주세요.');
   if (pin !== $('#pin2').value) return msgBox(out, '③ 확인번호 두 칸이 서로 달라요. 다시 확인해 주세요.');
@@ -386,6 +397,7 @@ $('#btnApply').onclick = async () => {
   const done = async r => {
     await modal(`<h2>🎉 신청 완료!${preview ? ' <span class="pill">미리보기</span>' : ''}</h2>
       <div class="bigbox">⏰ <b>${esc(r.slotName)}</b> (${esc(r.slotTime)})<br>👫 ${membersHtml(r.members)}</div>
+      ${comeBox(r.slotTime)}
       <div class="bigbox">🔑 내 확인번호 (확인·취소할 때 필요)<br><span class="pin">${esc(pin)}</span></div>
       <div class="warn" style="padding:12px 14px"><b>⚠️ 정해진 시간에 꼭 와 주세요!</b><br>못 오게 되면 [🔎 내 신청 확인·취소]에서 <b>바로 취소</b>해 주세요. 그래야 다른 친구가 체험할 수 있어요.</div>
       <div class="muted" style="margin-top:8px">📸 이 화면을 사진으로 찍어 두세요. 자리는 먼저 온 조부터 앉아요. 함께 신청한 친구들에게도 시간을 알려 주세요!</div>`);
@@ -417,7 +429,8 @@ $('#btnLookup').onclick = async () => {
     const a = r.app;
     out.innerHTML = `<div class="bigbox" style="margin-top:14px">✅ 신청되어 있어요<br>⏰ <b>${esc(a.slotName)}</b> (${esc(a.slotTime)})<br>
       👫 ${membersHtml(a.members)}<br><span class="muted">신청 시각: ${esc(a.at)}</span></div>
-      <div class="muted" style="margin-bottom:10px">정해진 시간에 꼭 와 주세요. 못 오게 되면 아래 버튼으로 취소해 주세요.</div>
+      ${comeBox(a.slotTime)}
+      <div class="muted" style="margin-bottom:10px">못 오게 되면 아래 버튼으로 꼭 취소해 주세요.</div>
       ${r.canCancel ? '<button class="btn red" id="btnCancelMine">이 신청 취소하기</button>' : '<div class="msg err">지금은 직접 취소할 수 없어요. 못 오게 되었다면 꼭 선생님께 말씀드리세요.</div>'}
       <div id="cancelMsg"></div>`;
     const cb = $('#btnCancelMine');
@@ -444,7 +457,7 @@ $('#btnIncluded').onclick = async () => {
     const r = await api('included', { sid, name }); busy(btn, false);
     if (!r.ok) return msgBox(out, r.msg);
     if (!r.found) return msgBox(out, '아직 신청된 내역이 없어요. (친구가 학번·이름을 다르게 적었을 수도 있어요)');
-    msgBox(out, `${r.leader} 학생이 신청한 「${r.slotName}」(${r.slotTime})에 들어 있어요! 시간 맞춰 꼭 와 주세요.`, true);
+    { msgBox(out, `${r.leader} 학생이 신청한 「${r.slotName}」(${r.slotTime})에 들어 있어요!`, true); out.insertAdjacentHTML('beforeend', comeBox(r.slotTime)); }
   } catch (e) { busy(btn, false); netErr(out); }
 };
 
@@ -494,6 +507,20 @@ async function admDo(action, data, btn, out){
     return r;
   } catch (e) { busy(btn, false); if (out) netErr(out); return { ok:false }; }
 }
+/** 관리자용: 타임 안의 자동 조 묶음 (한 조 = 최대 4명) */
+function teamsIn(slotId){
+  const list = adm.apps.filter(a => a.status === '신청' && a.slotId === slotId).sort((a, b) => a.at < b.at ? -1 : a.at > b.at ? 1 : 0);
+  const map = new Map();
+  list.forEach(a => { const k = a.grp || a.id; if (!map.has(k)) map.set(k, []); map.get(k).push(a); });
+  return [...map.values()].map((apps, i) => ({ no: i + 1, apps, size: apps.reduce((n, a) => n + a.count, 0) }));
+}
+function teamInfo(a){
+  const t = teamsIn(a.slotId).find(t => t.apps.some(x => x.id === a.id));
+  if (!t) return '';
+  const others = t.apps.filter(x => x.id !== a.id);
+  return `<br><span class="pill ${t.size === 4 ? 'ok' : ''}">👥 조 ${t.no} · ${t.size}/4명</span>` +
+    (others.length ? ` <span class="muted" style="font-size:15px">자동으로 함께 묶임: ${others.map(x => membersHtml(x.members)).join(' / ')}</span>` : '');
+}
 const statusPill = s => `<span class="pill ${s === '신청' ? 'ok' : 'no'}">${esc(s)}</span>`;
 function boardLink(){ return new URL('board.html', location.href).href.split('#')[0] + '#k=' + encodeURIComponent(adm.boardKey); }
 
@@ -521,7 +548,7 @@ function admSetHtml(){
     <div class="grid2">
       <label class="field"><span>부스 이름</span><input id="sBooth" value="${esc(s.booth)}" maxlength="40"></label>
       <label class="field"><span>장소</span><input id="sPlace" value="${esc(s.place)}" maxlength="30"></label>
-      <label class="field"><span>한 조 최대 인원</span><select id="sMax">${[1,2,3].map(n => `<option ${n === s.maxMembers ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="field"><span>한 번에 함께 신청할 수 있는 최대 인원 (한 조 = 4명)</span><select id="sMax">${[1,2,3,4].map(n => `<option ${n === s.maxMembers ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
       <div class="field"><span>기타</span>
         <label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="checkbox" id="sPaused" ${s.paused ? 'checked' : ''}> 신청을 잠시 멈추기</label>
         <label class="chk" style="background:#fff;border-color:#b9d3e8"><input type="checkbox" id="sCancel" ${s.canCancel ? 'checked' : ''}> 학생 본인 취소 허용</label></div>
@@ -537,7 +564,7 @@ function admSetHtml(){
 /* --- 타임 관리 --- */
 function admSlotHtml(){
   const rows = adm.slots.map(s => {
-    const used = adm.apps.filter(a => a.status === '신청' && a.slotId === s.id).length;
+    const used = teamsIn(s.id).length;
     return `<tr><td>${s.order}</td><td><b>${esc(s.name)}</b><br><span class="muted">${esc(s.time)}</span></td>
       <td>${used} / ${s.capacity}조</td><td>${s.part ? esc(s.part) : '<span class="muted">-</span>'}</td><td>${s.use ? '<span class="pill ok">보임</span>' : '<span class="pill no">숨김</span>'}</td>
       <td><div class="row"><button class="btn sm" data-edit-slot="${esc(s.id)}">수정</button>
@@ -574,7 +601,7 @@ function admAppsHtml(){
   const act = adm.apps.filter(a => a.status === '신청');
   const sum = adm.slots.map(s => {
     const n = act.filter(a => a.slotId === s.id);
-    return `<span class="pill" style="margin:3px">${esc(s.name)} ${n.length}/${s.capacity}조 · ${n.reduce((x, a) => x + a.count, 0)}명 · 도착 ${n.filter(a => a.arrived).length}</span>`;
+    return `<span class="pill" style="margin:3px">${esc(s.name)} ${teamsIn(s.id).length}/${s.capacity}조 (신청 ${n.length}건) · ${n.reduce((x, a) => x + a.count, 0)}명 · 도착 ${n.filter(a => a.arrived).length}</span>`;
   }).join('');
   return `<div class="card"><h2>📋 신청 목록</h2>
     <div style="margin-bottom:10px">${sum}</div>
@@ -585,7 +612,7 @@ function admAppsHtml(){
     </div>
     <div id="addAppBox"></div>
     <div class="tblwrap"><table><thead><tr><th>신청 시각</th><th>타임</th><th>조원</th><th>도착</th><th>상태</th><th></th></tr></thead><tbody>
-    ${list.map(a => `<tr><td>${esc(a.at)}</td><td>${esc(a.slotName)}</td><td>${membersHtml(a.members)} <span class="muted">(${a.count}명)</span>${a.status === '신청' && a.count === 1 ? (() => { const p = adm.apps.find(z => z.id === a.pair && z.status === '신청'); return p ? `<br><span class="pill ok">🤝 자동 짝: ${membersHtml(p.members)}</span>` : '<br><span class="pill">🙋 짝 기다리는 중</span>'; })() : ''}</td>
+    ${list.map(a => `<tr><td>${esc(a.at)}</td><td>${esc(a.slotName)}</td><td>${membersHtml(a.members)} <span class="muted">(${a.count}명)</span>${a.status === '신청' ? teamInfo(a) : ''}</td>
         <td>${a.status === '신청' ? `<button class="btn sm ${a.arrived ? 'mint' : 'gray'}" data-arr="${esc(a.id)}" data-on="${a.arrived ? '' : '1'}">${a.arrived ? '✔ ' + esc(a.arrived) : '미도착'}</button>` : ''}</td>
         <td>${statusPill(a.status)}${a.status !== '신청' ? `<br><span class="muted" style="font-size:15px">${esc(a.cancelAt)}<br>${esc(a.cancelBy)}${a.cancelReason ? ' · ' + esc(a.cancelReason) : ''}</span>` : ''}</td>
         <td>${a.status === '신청' ? `<button class="btn sm red" data-cancel="${esc(a.id)}">취소</button>` : ''}</td></tr>`).join('')
@@ -650,7 +677,7 @@ function bindAdmin(){
   on('#btnAddApp', () => {
     $('#addAppBox').innerHTML = `<div class="slotboard" style="background:#f4faff"><h3 style="margin-top:0">관리자 직접 신청 (신청 시간과 상관없이 넣을 수 있어요)</h3>
       <label class="field"><span>타임</span><select id="aSlot">${adm.slots.map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${esc(s.time)})</option>`).join('')}</select></label>
-      ${[1,2,3].map(i => `<div class="grid2"><input class="a-sid" maxlength="5" inputmode="numeric" placeholder="학번 ${i}${i === 1 ? ' (대표)' : ''}"><input class="a-name" maxlength="10" placeholder="이름 ${i}"></div><div style="height:8px"></div>`).join('')}
+      ${[1,2,3,4].map(i => `<div class="grid2"><input class="a-sid" maxlength="5" inputmode="numeric" placeholder="학번 ${i}${i === 1 ? ' (대표)' : ''}"><input class="a-name" maxlength="10" placeholder="이름 ${i}"></div><div style="height:8px"></div>`).join('')}
       <label class="field"><span>확인번호 4자리 (대표 학생에게 알려 주세요)</span><input id="aPin" maxlength="4" inputmode="numeric" style="max-width:200px"></label>
       <div class="row"><button class="btn" id="btnAddGo">신청 넣기</button><button class="btn gray" id="btnAddClose">닫기</button></div><div id="addMsg"></div></div>`;
     $('#btnAddClose').onclick = () => $('#addAppBox').innerHTML = '';
@@ -693,10 +720,9 @@ function startPreview(code){
     booth: s.booth, place: s.place, notice: s.notice, maxMembers: s.maxMembers,
     status: { startMs: startMs && startMs > Date.now() ? startMs : Date.now() + 10 * 60000, endMs: endMs },
     slots: adm.slots.filter(x => x.use).map(x => {
-      const list = act.filter(a => a.slotId === x.id), ids = new Set(list.map(a => a.id));
-      const used = list.filter(a => !(a.pair && ids.has(a.pair) && a.pair < a.id)).length;
-      const soloOpen = list.some(a => a.count === 1 && !(a.pair && ids.has(a.pair)));
-      return { id: x.id, name: x.name, time: x.time, capacity: x.capacity, used, remaining: Math.max(0, x.capacity - used), soloOpen };
+      const teams = teamsIn(x.id);
+      const used = teams.length, openSpace = teams.reduce((m, t) => Math.max(m, t.size < 4 ? 4 - t.size : 0), 0);
+      return { id: x.id, name: x.name, time: x.time, capacity: x.capacity, used, remaining: Math.max(0, x.capacity - used), openSpace };
     })
   };
   preview = { code: code || 'before', data }; entered = false;
